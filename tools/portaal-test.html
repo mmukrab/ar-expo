@@ -49,7 +49,7 @@
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-      import { maakPortaal } from "../js/portaal.js";
+      import { maakPortaal, richtLichtIn } from "../js/portaal.js";
 
       const $ = (id) => document.getElementById(id);
       const vraag = new URLSearchParams(location.search);
@@ -66,18 +66,19 @@
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x6d7480);
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
-      const zon = new THREE.DirectionalLight(0xffffff, 2);
-      zon.position.set(0.5, 1, 1.5);
-      scene.add(zon);
+      richtLichtIn(renderer, scene);
 
-      const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 100);
+      // In AR is de poster veel groter dan 1 eenheid; met ?schaal=300 boots je dat hier na, om te
+      // controleren dat licht en schaduw daar niet van afhangen.
+      const posterSchaal = Number(vraag.get("schaal") ?? 1);
+      const camera = new THREE.PerspectiveCamera(50, 1, 0.01 * posterSchaal, 100 * posterSchaal);
       // De poster hangt aan een "muur"; slepen draait de kijker eromheen, zoals lopen met een telefoon.
       let draaiX = Number(vraag.get("rx") ?? 0);
       let draaiY = Number(vraag.get("ry") ?? 0);
-      const afstand = 2.6;
+      const afstand = 2.6 * posterSchaal;
 
       const poster = new THREE.Group();
+      poster.scale.setScalar(posterSchaal);
       scene.add(poster);
       const loader = new GLTFLoader();
       loader.setDRACOLoader(

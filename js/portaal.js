@@ -7,16 +7,41 @@
 //   aan de kijkkant. Daardoor hoeft het model zelf geen open wand te hebben.
 
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 const STENCIL = 1;
+const LICHTRICHTING = new THREE.Vector3(0.45, -0.6, -1).normalize(); // van de kijker schuin de kamer in
+
+const omgevingen = new WeakMap();
+
+// Zet renderer en scène klaar voor de kamers: schaduwen, filmische toonweergave en een zachte
+// omgeving die materialen laat glanzen in plaats van ze vlak te belichten.
+export function richtLichtIn(renderer, scene) {
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  if (!omgevingen.has(renderer)) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    omgevingen.set(renderer, pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture);
+    pmrem.dispose();
+  }
+  scene.environment = omgevingen.get(renderer);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.9));
+}
 
 // Maakt van een geladen kamer een portaal op een poster van 1 breed en `hoogte` hoog.
 //   kijk      : draait de kamer om zijn verticale as (graden), om te kiezen door welke wand je kijkt
 //   zoom      : groter dan 1 haalt de kamer dichterbij
 //   insnijden : welk deel van de kamerdiepte vóór de poster wordt weggesneden (0.05 = 5%)
 //   omhoog    : verschuift de kamer verticaal, als deel van de posterhoogte
+//   schaduw   : false zet de schaduwen uit (scheelt rekenwerk op trage telefoons)
+//   licht     : sterkte van de lamp die door de poster naar binnen schijnt
 // Geeft { groep, werkBij }; roep werkBij() elke frame aan vóór het renderen.
-export function maakPortaal(kamer, { hoogte = 1.414, kijk = 0, zoom = 1, insnijden = 0.05, omhoog = 0 } = {}) {
+export function maakPortaal(
+  kamer,
+  { hoogte = 1.414, kijk = 0, zoom = 1, insnijden = 0.05, omhoog = 0, schaduw = true, licht = 2.6 } = {},
+) {
   const groep = new THREE.Group();
 
   const raam = new THREE.Mesh(
@@ -64,14 +89,46 @@ export function maakPortaal(kamer, { hoogte = 1.414, kijk = 0, zoom = 1, insnijd
       materiaal.stencilRef = STENCIL;
       materiaal.stencilFunc = THREE.EqualStencilFunc;
       materiaal.clippingPlanes = [snijvlak];
+      // De weggesneden voorwand mag ook geen schaduw werpen, anders komt er geen licht binnen.
+      materiaal.clipShadows = true;
+      // De omgeving vult alleen aan; de lamp bepaalt het beeld.
+      if ("envMapIntensity" in materiaal) materiaal.envMapIntensity = 0.45;
     }
+    deel.castShadow = deel.receiveShadow = schaduw;
   });
+
+  // Eén lamp schijnt door de open voorkant naar binnen, alsof het licht vanuit de zaal de kamer in
+  // valt. Hij hangt aan de poster, dus licht en schaduw draaien mee als de bezoeker beweegt.
+  const kern = new THREE.Vector3(0, omhoog * hoogte, inhoud.position.z + midden.z * schaal);
+  const straal = (maat.length() * schaal) / 2;
+  const lamp = new THREE.DirectionalLight(0xfff2dd, licht);
+  lamp.position.copy(kern).addScaledVector(LICHTRICHTING, -2 * straal);
+  lamp.target.position.copy(kern);
+  lamp.castShadow = schaduw;
+  lamp.shadow.mapSize.set(1024, 1024);
+  lamp.shadow.bias = -0.0004;
+  groep.add(lamp, lamp.target);
+  let lampSchaal = 0;
+  const wereldSchaal = new THREE.Vector3();
 
   // Het snijvlak ligt op de poster en houdt alles erachter (z < 0 in posterruimte).
   const basis = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   function werkBij() {
     groep.updateWorldMatrix(true, false);
     snijvlak.copy(basis).applyMatrix4(groep.matrixWorld);
+
+    // De schaduwcamera rekent in wereldmaten, en de poster heeft in AR een heel andere schaal dan 1.
+    const s = groep.getWorldScale(wereldSchaal).x;
+    if (schaduw && Math.abs(s - lampSchaal) > 1e-4 * s) {
+      lampSchaal = s;
+      const camera = lamp.shadow.camera;
+      camera.left = camera.bottom = -straal * s;
+      camera.right = camera.top = straal * s;
+      camera.near = 0.5 * straal * s;
+      camera.far = 3.5 * straal * s;
+      camera.updateProjectionMatrix();
+      lamp.shadow.normalBias = 0.012 * straal * s;
+    }
   }
 
   return { groep, werkBij };

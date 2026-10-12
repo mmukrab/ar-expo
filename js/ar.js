@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { MindARThree } from "mindar-image-three";
 import { config } from "./config.js";
-import { maakPortaal } from "./portaal.js";
+import { maakPortaal, richtLichtIn } from "./portaal.js";
 import { toonIntro, stopIntro } from "./intro.js";
 
 const $ = (id) => document.getElementById(id);
@@ -224,10 +224,7 @@ async function start() {
   const { renderer, scene, camera } = mindar;
   renderer.localClippingEnabled = true; // nodig voor het snijvlak van de portalen
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
-  const sun = new THREE.DirectionalLight(0xffffff, 2);
-  sun.position.set(0.5, 1, 1.5);
-  scene.add(sun);
+  richtLichtIn(renderer, scene);
 
   const posters = config.posters.map((data, index) => {
     const anchor = mindar.addAnchor(index);

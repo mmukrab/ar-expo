@@ -40,7 +40,7 @@
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
       import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-      import { maakPortaal } from "../js/portaal.js";
+      import { maakPortaal, richtLichtIn } from "../js/portaal.js";
       import { config } from "../js/config.js";
 
       const BREED = 150;
@@ -78,10 +78,7 @@
           for (const kijk of [0, 90, 180, 270]) {
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x6d7480);
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
-            const zon = new THREE.DirectionalLight(0xffffff, 2);
-            zon.position.set(0.5, 1, 1.5);
-            scene.add(zon);
+            richtLichtIn(renderer, scene);
 
             const portaal = maakPortaal(model.clone(true), { hoogte, ...work.portaal, kijk });
             scene.add(portaal.groep);
