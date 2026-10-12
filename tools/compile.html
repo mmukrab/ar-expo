@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Posters compileren</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  </head>
+  <body class="tool">
+    <main>
+      <h1>Posters compileren</h1>
+      <p>
+        Kies de afbeeldingen van al je posters (JPG of PNG). Ze worden op bestandsnaam gesorteerd; het nummer
+        dat je hieronder ziet is de positie van de poster in <code>posters</code> in <code>js/config.js</code>.
+        Alles gebeurt in je browser, er wordt niets geüpload.
+      </p>
+
+      <div class="row">
+        <input id="files" type="file" accept="image/*" multiple />
+      </div>
+      <ol id="list" class="targets"></ol>
+      <div class="row">
+        <button id="go" class="primary" disabled>Maak targets.mind</button>
+      </div>
+      <p id="status"></p>
+    </main>
+
+    <script type="module">
+      const filesInput = document.getElementById("files");
+      const list = document.getElementById("list");
+      const go = document.getElementById("go");
+      const status = document.getElementById("status");
+      let images = [];
+
+      const loadImage = (file) =>
+        new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error(`Kan ${file.name} niet lezen`));
+          img.src = URL.createObjectURL(file);
+        });
+
+      filesInput.addEventListener("change", async () => {
+        const files = [...filesInput.files].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true }),
+        );
+        try {
+          images = await Promise.all(files.map(loadImage));
+        } catch (err) {
+          status.textContent = err.message;
+          return;
+        }
+        list.replaceChildren(
+          ...files.map((file, i) => {
+            const li = document.createElement("li");
+            const label = document.createElement("span");
+            label.innerHTML = `<b>${i + 1}.</b> `;
+            label.append(file.name);
+            li.append(images[i], label);
+            return li;
+          }),
+        );
+        go.disabled = images.length === 0;
+        status.textContent = "";
+      });
+
+      go.addEventListener("click", async () => {
+        go.disabled = true;
+        try {
+          const compiler = new window.MINDAR.IMAGE.Compiler();
+          await compiler.compileImageTargets(images, (progress) => {
+            status.textContent = `Bezig… ${progress.toFixed(0)}%`;
+          });
+          const blob = new Blob([await compiler.exportData()]);
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "targets.mind";
+          link.click();
+          status.textContent = "Klaar. Zet targets.mind in assets/targets/ en verwijs ernaar in js/config.js.";
+        } catch (err) {
+          console.error(err);
+          status.textContent = `Compileren mislukt: ${err.message}`;
+        }
+        go.disabled = false;
+      });
+    </script>
+  </body>
+</html>

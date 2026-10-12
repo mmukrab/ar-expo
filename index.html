@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0d0d12" />
+    <title>AR Expo</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+          "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+        }
+      }
+    </script>
+    <script type="module" src="js/ar.js"></script>
+  </head>
+  <body>
+    <div id="ar"></div>
+
+    <section id="start" class="overlay">
+      <h1 id="start-title">AR Expo</h1>
+      <p id="start-intro"></p>
+      <button id="start-button" class="primary">Start camera</button>
+      <p id="start-error" class="error" role="alert"></p>
+      <p class="small">Je camerabeeld blijft op je eigen toestel en wordt niet opgeslagen.</p>
+    </section>
+
+    <section id="loading" class="overlay" hidden>
+      <div class="spinner"></div>
+      <p>Even geduld, de AR wordt geladen…</p>
+    </section>
+
+    <div id="hud">
+      <div id="progress" class="chip"></div>
+      <div id="hint" class="chip">Richt je camera op een poster</div>
+
+      <div id="panel">
+        <button id="prev" class="nav" aria-label="Vorig werk">‹</button>
+        <div class="info">
+          <div id="poster-title"></div>
+          <div id="work-title"></div>
+          <div id="work-maker"></div>
+          <div id="dots"></div>
+        </div>
+        <button id="next" class="nav" aria-label="Volgend werk">›</button>
+      </div>
+    </div>
+  </body>
+</html>

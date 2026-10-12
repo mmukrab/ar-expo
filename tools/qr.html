@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QR-code maken</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  </head>
+  <body class="tool">
+    <main>
+      <h1>QR-code voor de ingang</h1>
+      <p>Vul het webadres in waar de AR-pagina online staat. Het moet met <code>https://</code> beginnen, anders werkt de camera niet.</p>
+
+      <input id="url" type="url" placeholder="https://…" />
+      <div id="qr"></div>
+      <div class="row">
+        <button id="download" class="primary">Download SVG</button>
+        <button id="print" class="primary">Print</button>
+      </div>
+    </main>
+
+    <script>
+      const input = document.getElementById("url");
+      const box = document.getElementById("qr");
+
+      // Standaard: de map boven /tools/, dus de bezoekerspagina van deze site.
+      input.value = new URL("../", location.href).href;
+
+      function render() {
+        const qr = qrcode(0, "M");
+        qr.addData(input.value.trim() || " ");
+        qr.make();
+        box.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+      }
+
+      input.addEventListener("input", render);
+      render();
+
+      document.getElementById("print").addEventListener("click", () => print());
+      document.getElementById("download").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([box.innerHTML], { type: "image/svg+xml" }));
+        link.download = "qr-ar-expo.svg";
+        link.click();
+      });
+    </script>
+  </body>
+</html>
