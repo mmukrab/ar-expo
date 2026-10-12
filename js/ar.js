@@ -4,6 +4,7 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { MindARThree } from "mindar-image-three";
 import { config } from "./config.js";
 import { maakPortaal } from "./portaal.js";
+import { toonIntro, stopIntro } from "./intro.js";
 
 const $ = (id) => document.getElementById(id);
 const FOUND_KEY = "ar-expo-found";
@@ -134,6 +135,14 @@ function show(poster, index) {
   poster.slots.forEach((slot, i) => (slot.holder.visible = i === poster.current));
   const slot = poster.slots[poster.current];
   slot.holder.scale.setScalar(0.001); // groeit in de renderloop naar 1
+  // De naam van de maker leidt het werk in, één keer per werk; daarna verschijnt het direct.
+  slot.wachtTot = 0;
+  if (!slot.introGetoond && slot.work.maker) {
+    slot.introGetoond = true;
+    slot.wachtTot = performance.now() + toonIntro(slot.work.maker, slot.work.title);
+  } else {
+    stopIntro();
+  }
   renderPanel(poster);
   loadSlot(slot)
     .catch((err) => {
@@ -162,6 +171,7 @@ function onLost(poster) {
   hideTimer = setTimeout(() => {
     if (active !== poster) return;
     active = null;
+    stopIntro();
     document.body.classList.remove("tracking");
   }, HIDE_DELAY);
 }
@@ -255,6 +265,7 @@ async function start() {
       if (!slot.holder.visible) continue;
       if (slot.werkBij) slot.werkBij();
       else if (slot.work.spin !== false) slot.holder.rotation.y += dt * 0.6;
+      if (performance.now() < slot.wachtTot) continue; // de intro is nog bezig
       const s = slot.holder.scale.x;
       slot.holder.scale.setScalar(s + (1 - s) * Math.min(1, dt * 8));
       slot.mixer?.update(dt);

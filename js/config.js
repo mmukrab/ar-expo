@@ -28,7 +28,7 @@ export const config = {
       works: [
         {
           title: "Slaapkamer",
-          maker: "Hughes",
+          maker: "Jonah Hughes",
           src: "assets/models/Kamer_hughes.glb",
           portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
         },
