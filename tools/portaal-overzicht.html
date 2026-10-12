@@ -68,6 +68,7 @@
           let model;
           try {
             model = (await loader.loadAsync(new URL("../" + work.src, location.href).href)).scene;
+            model.updateMatrixWorld(true);
           } catch (fout) {
             fouten.push(`${work.src}: ${fout.message}`);
             rij.insertCell().textContent = "laden mislukt";
