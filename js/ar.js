@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { MindARThree } from "mindar-image-three";
 import { config } from "./config.js";
+import { maakPortaal } from "./portaal.js";
 
 const $ = (id) => document.getElementById(id);
 const FOUND_KEY = "ar-expo-found";
@@ -14,6 +16,10 @@ $("start-intro").textContent = config.intro;
 // ---------- 3D-werk ----------
 
 const loader = new GLTFLoader();
+// De kamers zijn met Draco gecomprimeerd; de decoder wordt pas opgehaald als een model hem nodig heeft.
+loader.setDRACOLoader(
+  new DRACOLoader().setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/"),
+);
 
 const shapes = {
   knot: () => new THREE.TorusKnotGeometry(0.3, 0.1, 128, 16),
@@ -62,9 +68,16 @@ async function loadSlot(slot) {
     } else {
       object = makePlaceholder(work);
     }
-    slot.holder.add(fit(object, size));
-    // Laat het werk vóór de poster zweven in plaats van er half doorheen.
-    slot.holder.position.z = size / 2 + 0.1;
+    if (work.portaal) {
+      // De poster wordt een raam waardoor je de kamer in kijkt.
+      const portaal = maakPortaal(object, { hoogte: slot.hoogte, ...work.portaal });
+      slot.holder.add(portaal.groep);
+      slot.werkBij = portaal.werkBij;
+    } else {
+      slot.holder.add(fit(object, size));
+      // Laat het werk vóór de poster zweven in plaats van er half doorheen.
+      slot.holder.position.z = size / 2 + 0.1;
+    }
     slot.loaded = true;
   })();
   return slot.loading;
@@ -199,6 +212,7 @@ async function start() {
     uiError: "no",
   });
   const { renderer, scene, camera } = mindar;
+  renderer.localClippingEnabled = true; // nodig voor het snijvlak van de portalen
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
   const sun = new THREE.DirectionalLight(0xffffff, 2);
@@ -214,7 +228,7 @@ async function start() {
         const holder = new THREE.Group();
         holder.visible = false;
         anchor.group.add(holder);
-        return { work, holder, loaded: false };
+        return { work, holder, loaded: false, hoogte: data.verhouding ?? 1.414 };
       }),
     };
     anchor.onTargetFound = () => onFound(poster, index);
@@ -239,7 +253,8 @@ async function start() {
     for (const poster of posters) {
       const slot = poster.slots[poster.current];
       if (!slot.holder.visible) continue;
-      if (slot.work.spin !== false) slot.holder.rotation.y += dt * 0.6;
+      if (slot.werkBij) slot.werkBij();
+      else if (slot.work.spin !== false) slot.holder.rotation.y += dt * 0.6;
       const s = slot.holder.scale.x;
       slot.holder.scale.setScalar(s + (1 - s) * Math.min(1, dt * 8));
       slot.mixer?.update(dt);

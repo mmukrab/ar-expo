@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portaal afstellen</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+      body.tool { padding: 0; }
+      #beeld { position: fixed; inset: 0 320px 0 0; background: #6d7480; }
+      #paneel { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; padding: 16px; overflow: auto; background: var(--bg); }
+      #paneel h1 { font-size: 1.2rem; margin: 0 0 8px; }
+      #paneel label { display: block; margin-top: 14px; font-size: 0.85rem; color: var(--muted); }
+      #paneel input[type="range"], #paneel select { width: 100%; }
+      #paneel output { float: right; color: var(--fg); }
+      #paneel pre { white-space: pre-wrap; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); font-size: 0.8rem; user-select: all; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body class="tool">
+    <div id="beeld"></div>
+    <div id="paneel">
+      <h1>Portaal afstellen</h1>
+      <p>Sleep in het beeld om om de poster heen te lopen. Het grijze kader is de poster.</p>
+
+      <label>Model (pad vanaf de site)<input id="model" type="text" /></label>
+      <label>Kijkrichting <output id="kijk-uit"></output><select id="kijk">
+        <option value="0">0°</option><option value="90">90°</option>
+        <option value="180">180°</option><option value="270">270°</option>
+      </select></label>
+      <label>Zoom <output id="zoom-uit"></output><input id="zoom" type="range" min="0.5" max="3" step="0.05" /></label>
+      <label>Insnijden <output id="insnijden-uit"></output><input id="insnijden" type="range" min="0" max="0.6" step="0.01" /></label>
+      <label>Omhoog <output id="omhoog-uit"></output><input id="omhoog" type="range" min="-0.5" max="0.5" step="0.01" /></label>
+      <label>Verhouding poster (hoogte / breedte) <output id="hoogte-uit"></output><input id="hoogte" type="range" min="0.5" max="2" step="0.01" /></label>
+
+      <p>Zet dit bij het werk in <code>js/config.js</code>:</p>
+      <pre id="code"></pre>
+      <p id="melding" class="small"></p>
+    </div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+      import { maakPortaal } from "../js/portaal.js";
+
+      const $ = (id) => document.getElementById(id);
+      const vraag = new URLSearchParams(location.search);
+      const velden = ["kijk", "zoom", "insnijden", "omhoog", "hoogte"];
+      const standaard = { kijk: 0, zoom: 1, insnijden: 0.05, omhoog: 0, hoogte: 1.414 };
+      $("model").value = vraag.get("model") ?? "assets/models/Kamer_hughes.glb";
+      for (const veld of velden) $(veld).value = vraag.get(veld) ?? standaard[veld];
+
+      const beeld = $("beeld");
+      const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
+      renderer.localClippingEnabled = true;
+      renderer.setPixelRatio(devicePixelRatio);
+      beeld.append(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x6d7480);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
+      const zon = new THREE.DirectionalLight(0xffffff, 2);
+      zon.position.set(0.5, 1, 1.5);
+      scene.add(zon);
+
+      const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 100);
+      // De poster hangt aan een "muur"; slepen draait de kijker eromheen, zoals lopen met een telefoon.
+      let draaiX = Number(vraag.get("rx") ?? 0);
+      let draaiY = Number(vraag.get("ry") ?? 0);
+      const afstand = 2.6;
+
+      const poster = new THREE.Group();
+      scene.add(poster);
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(
+        new DRACOLoader().setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/"),
+      );
+
+      let bron = null; // het geladen model, ongewijzigd bewaard om opnieuw te kunnen opbouwen
+      let werkBij = () => {};
+
+      function instellingen() {
+        return Object.fromEntries(velden.map((veld) => [veld, Number($(veld).value)]));
+      }
+
+      function bouw() {
+        const { hoogte, ...portaalOpties } = instellingen();
+        for (const veld of velden) $(veld + "-uit").textContent = $(veld).value;
+        $("code").textContent =
+          `{\n  title: "…",\n  maker: "…",\n  src: "${$("model").value}",\n  portaal: ${JSON.stringify(portaalOpties)
+            .replaceAll('"', "")
+            .replaceAll(",", ", ")
+            .replaceAll(":", ": ")},\n}`;
+        poster.clear();
+        if (!bron) return;
+
+        // Een kopie per opbouw; de materialen worden gedeeld, maar alleen de laatste opbouw staat in beeld.
+        const portaal = maakPortaal(bron.clone(true), { hoogte, ...portaalOpties });
+        poster.add(portaal.groep);
+        werkBij = portaal.werkBij;
+
+        const kader = new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, hoogte)),
+          new THREE.LineBasicMaterial({ color: 0xffffff }),
+        );
+        kader.position.z = 0.001;
+        poster.add(kader);
+      }
+
+      async function laad() {
+        $("melding").textContent = "Model laden…";
+        try {
+          const gltf = await loader.loadAsync(new URL("../" + $("model").value, location.href).href);
+          bron = gltf.scene;
+          const doos = new THREE.Box3().setFromObject(bron);
+          const maat = doos.getSize(new THREE.Vector3());
+          $("melding").textContent = `Geladen. Afmetingen: ${maat.x.toFixed(1)} × ${maat.y.toFixed(1)} × ${maat.z.toFixed(1)} m (b × h × d).`;
+        } catch (fout) {
+          bron = null;
+          $("melding").textContent = "Laden mislukt: " + fout.message;
+        }
+        bouw();
+      }
+
+      for (const veld of velden) $(veld).addEventListener("input", bouw);
+      $("model").addEventListener("change", laad);
+
+      let sleep = null;
+      beeld.addEventListener("pointerdown", (e) => (sleep = { x: e.clientX, y: e.clientY, rx: draaiX, ry: draaiY }));
+      addEventListener("pointerup", () => (sleep = null));
+      addEventListener("pointermove", (e) => {
+        if (!sleep) return;
+        draaiY = Math.max(-75, Math.min(75, sleep.ry - (e.clientX - sleep.x) * 0.3));
+        draaiX = Math.max(-60, Math.min(60, sleep.rx + (e.clientY - sleep.y) * 0.3));
+      });
+
+      function maat() {
+        const { clientWidth: b, clientHeight: h } = beeld;
+        renderer.setSize(b, h);
+        camera.aspect = b / h;
+        camera.updateProjectionMatrix();
+      }
+      addEventListener("resize", maat);
+      maat();
+
+      renderer.setAnimationLoop(() => {
+        const rx = THREE.MathUtils.degToRad(draaiX);
+        const ry = THREE.MathUtils.degToRad(draaiY);
+        camera.position.set(Math.sin(ry) * Math.cos(rx), Math.sin(rx), Math.cos(ry) * Math.cos(rx)).multiplyScalar(afstand);
+        camera.lookAt(0, 0, 0);
+        werkBij();
+        renderer.render(scene, camera);
+      });
+
+      laad();
+    </script>
+  </body>
+</html>
