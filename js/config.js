@@ -1,30 +1,79 @@
-// Alles wat je per tentoonstelling aanpast staat in dit bestand.
+// Dit bestand wordt gemaakt door omzetten/maak_config.py uit namen.csv; pas het niet met de hand aan.
 //
-// - `targets`  : het .mind-bestand met alle posters (maak het met tools/compile.html).
-// - `posters`  : één item per poster, in DEZELFDE volgorde als in het .mind-bestand.
-// - `works`    : de verzameling 3D-werken die bij die poster verschijnt.
-//     src   : pad naar een .glb/.gltf-bestand, bv. "assets/models/vaas.glb"
-//     size  : grootte t.o.v. de posterbreedte (1 = even breed als de poster)
-//     spin  : false om het werk niet te laten ronddraaien
-//     shape : alleen voor de demo, zolang er nog geen `src` is
-//             (knot | ico | torus | cone | box | sphere)
-//     portaal : maakt van de poster een raam waardoor je een kamer in kijkt, bv.
-//             portaal: { kijk: 90, zoom: 1, insnijden: 0.05, omhoog: 0 }
-//             (stel dit per kamer af met tools/portaal-test.html)
-// - `verhouding` per poster: hoogte gedeeld door breedte (staand A-formaat = 1.414).
+// - `targets`  : het .mind-bestand met alle posters, in dezelfde volgorde als `posters` hieronder.
+// - `posters`  : één item per poster. `verhouding` is hoogte gedeeld door breedte.
+// - `works`    : de werken die bij die poster verschijnen.
+//     portaal : maakt van de poster een raam waardoor je de kamer in kijkt
+//               (afstellen per kamer in omzetten/portalen.json, uitproberen met tools/portaal-test.html)
 
 export const config = {
   title: "AR Expo",
-  intro: "Richt je camera op een poster en ontdek het 3D-werk dat erachter schuilt.",
-
-  // Demo-targets van MindAR (wasbeer + beer). Vervang door "assets/targets/targets.mind".
-  targets:
-    "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/band-example/band.mind",
-
+  intro: "Richt je camera op een poster en kijk de kamer van de maker in.",
+  targets: "assets/targets/targets.mind",
   posters: [
     {
-      title: "Poster 1",
-      verhouding: 1, // de demo-afbeeldingen zijn vierkant
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Ruben Boersma",
+          src: "assets/models/Kamer_Boersma.glb",
+          portaal: { kijk: 270, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Bryen van de Ven",
+          src: "assets/models/Kamer_bryen_vandeven.glb",
+          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Rachel Cronje",
+          src: "assets/models/Kamer_Cronje.glb",
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Renar Gassly",
+          src: "assets/models/Kamer_Gassly.glb",
+          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Dylan Hernandez Willems",
+          src: "assets/models/Kamer_Hernandez.glb",
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
       works: [
         {
           title: "Slaapkamer",
@@ -35,12 +84,75 @@ export const config = {
       ],
     },
     {
-      title: "Poster 2",
-      verhouding: 1,
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
       works: [
-        { title: "Werk D", maker: "Naam maker", shape: "cone", color: "#80ed99" },
-        { title: "Werk E", maker: "Naam maker", shape: "box", color: "#c77dff" },
-        { title: "Werk F", maker: "Naam maker", shape: "sphere", color: "#ff9f1c" },
+        {
+          title: "Slaapkamer",
+          maker: "Yannieck Kersten",
+          src: "assets/models/Kamer_Kersten.glb",
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Matthew Konior",
+          src: "assets/models/kamer_konior.glb",
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 0.707,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Daan van Lent",
+          src: "assets/models/Kamer_lent.glb",
+          portaal: { kijk: 180, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Finn Timmermans",
+          src: "assets/models/Kamer_Timmermans.glb",
+          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.415,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Thanael van de Heuvel",
+          src: "assets/models/kamer_van_den_Heuvel.glb",
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 0.562,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Milo Veltman",
+          src: "assets/models/kamer_veltman.glb",
+          portaal: { kijk: 180, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
       ],
     },
   ],

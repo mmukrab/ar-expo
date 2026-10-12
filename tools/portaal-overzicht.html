@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portalen in één oogopslag</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <style>
+      .tool main { max-width: none; }
+      table { border-collapse: collapse; }
+      td, th { padding: 4px 6px; font-size: 0.8rem; text-align: center; vertical-align: top; }
+      th { color: var(--muted); font-weight: 400; }
+      td.naam { text-align: left; max-width: 150px; color: var(--fg); }
+      td.gekozen img { outline: 3px solid var(--accent); }
+      img { display: block; background: #6d7480; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body class="tool">
+    <main>
+      <h1>Portalen in één oogopslag</h1>
+      <p>
+        Elke kamer uit <code>js/config.js</code>, gezien door zijn poster, voor de vier kijkrichtingen. De
+        richting die nu is ingesteld heeft een gele rand. Klik op een plaatje om die kamer af te stellen.
+      </p>
+      <p id="melding">Laden…</p>
+      <table id="tabel">
+        <tr><th></th><th>0°</th><th>90°</th><th>180°</th><th>270°</th></tr>
+      </table>
+    </main>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+      import { maakPortaal } from "../js/portaal.js";
+      import { config } from "../js/config.js";
+
+      const BREED = 150;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true, preserveDrawingBuffer: true });
+      renderer.localClippingEnabled = true;
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(
+        new DRACOLoader().setDecoderPath("https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/gltf/"),
+      );
+
+      const tabel = document.getElementById("tabel");
+      const melding = document.getElementById("melding");
+      const fouten = [];
+
+      for (const poster of config.posters) {
+        const hoogte = poster.verhouding ?? 1.414;
+        for (const work of poster.works) {
+          if (!work.src || !work.portaal) continue;
+          melding.textContent = `Laden: ${work.maker ?? work.src}…`;
+          const rij = tabel.insertRow();
+          const naam = rij.insertCell();
+          naam.className = "naam";
+          naam.textContent = work.maker ?? work.src;
+
+          let model;
+          try {
+            model = (await loader.loadAsync(new URL("../" + work.src, location.href).href)).scene;
+          } catch (fout) {
+            fouten.push(`${work.src}: ${fout.message}`);
+            rij.insertCell().textContent = "laden mislukt";
+            continue;
+          }
+
+          for (const kijk of [0, 90, 180, 270]) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x6d7480);
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 2.2));
+            const zon = new THREE.DirectionalLight(0xffffff, 2);
+            zon.position.set(0.5, 1, 1.5);
+            scene.add(zon);
+
+            const portaal = maakPortaal(model.clone(true), { hoogte, ...work.portaal, kijk });
+            scene.add(portaal.groep);
+            portaal.werkBij();
+
+            // Recht van voren, zo ver dat de poster het beeld vult: wat een bezoeker als eerste ziet.
+            const camera = new THREE.PerspectiveCamera(40, 1 / hoogte, 0.01, 100);
+            camera.position.set(0, 0, hoogte / 2 / Math.tan(THREE.MathUtils.degToRad(20)));
+            renderer.setSize(BREED, Math.round(BREED * hoogte));
+            renderer.render(scene, camera);
+
+            const cel = rij.insertCell();
+            if ((work.portaal.kijk ?? 0) === kijk) cel.className = "gekozen";
+            const link = document.createElement("a");
+            const vraag = new URLSearchParams({ model: work.src, hoogte, ...work.portaal, kijk });
+            link.href = "portaal-test.html?" + vraag;
+            const beeld = new Image();
+            beeld.src = renderer.domElement.toDataURL("image/jpeg", 0.85);
+            beeld.width = BREED;
+            link.append(beeld);
+            cel.append(link);
+          }
+        }
+      }
+      melding.textContent = fouten.length ? "Niet geladen: " + fouten.join("; ") : "Klaar.";
+      document.title = "klaar";
+    </script>
+  </body>
+</html>
