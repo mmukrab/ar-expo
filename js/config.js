@@ -149,7 +149,7 @@ export const config = {
       works: [
         {
           title: "Slaapkamer",
-          maker: "Thanael van de Heuvel",
+          maker: "Thanael van den Heuvel",
           src: "assets/models/kamer_van_den_Heuvel.glb",
           portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
         },
