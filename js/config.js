@@ -43,7 +43,7 @@ export const config = {
           title: "Slaapkamer",
           maker: "Rachel Cronje",
           src: "assets/models/Kamer_Cronje.glb",
-          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+          portaal: { kijk: 90, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
         },
       ],
     },
@@ -133,6 +133,18 @@ export const config = {
     },
     {
       title: "VR-slaapkamer",
+      verhouding: 1.498,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Stan Bijl",
+          src: "assets/models/kamer_stan.glb",
+          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
       verhouding: 1.415,
       works: [
         {
@@ -157,12 +169,24 @@ export const config = {
     },
     {
       title: "VR-slaapkamer",
+      verhouding: 0.707,
+      works: [
+        {
+          title: "Slaapkamer",
+          maker: "Vasco van Haren",
+          src: "assets/models/kamer_van_Haren.glb",
+          portaal: { kijk: 0, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
+        },
+      ],
+    },
+    {
+      title: "VR-slaapkamer",
       verhouding: 0.562,
       works: [
         {
           title: "Slaapkamer",
           maker: "Milo Veltman",
-          src: "assets/models/kamer_veltman.glb",
+          src: "assets/models/kamer veltman.glb",
           portaal: { kijk: 180, zoom: 1.25, insnijden: 0.1, omhoog: 0 },
         },
       ],

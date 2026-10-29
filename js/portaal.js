@@ -30,6 +30,32 @@ export function richtLichtIn(renderer, scene) {
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.9));
 }
 
+// De omvang van de kamer, zonder losse voorwerpen die ver buiten de kamer zweven. Eén vergeten
+// object op een kilometer afstand zou de kamer anders tot een stipje verkleinen.
+function kamerDoos(model) {
+  const delen = [];
+  model.traverse((deel) => {
+    if (!deel.isMesh) return;
+    const doos = new THREE.Box3().setFromObject(deel);
+    if (!doos.isEmpty()) delen.push({ doos, midden: doos.getCenter(new THREE.Vector3()) });
+  });
+  if (delen.length === 0) return new THREE.Box3().setFromObject(model);
+
+  const mediaan = (waarden) => waarden.sort((a, b) => a - b)[Math.floor(waarden.length / 2)];
+  const kern = new THREE.Vector3(
+    mediaan(delen.map((d) => d.midden.x)),
+    mediaan(delen.map((d) => d.midden.y)),
+    mediaan(delen.map((d) => d.midden.z)),
+  );
+  const afstanden = delen.map((d) => d.midden.distanceTo(kern));
+  const grens = Math.max(5 * mediaan([...afstanden]), 2);
+  const doos = new THREE.Box3();
+  delen.forEach((d, i) => {
+    if (afstanden[i] <= grens) doos.union(d.doos);
+  });
+  return doos;
+}
+
 // Maakt van een geladen kamer een portaal op een poster van 1 breed en `hoogte` hoog.
 //   kijk      : draait de kamer om zijn verticale as (graden), om te kiezen door welke wand je kijkt
 //   zoom      : groter dan 1 haalt de kamer dichterbij
@@ -62,7 +88,7 @@ export function maakPortaal(
   draai.rotation.y = THREE.MathUtils.degToRad(kijk);
   draai.add(kamer);
   draai.updateMatrixWorld(true);
-  const doos = new THREE.Box3().setFromObject(draai);
+  const doos = kamerDoos(draai);
   const maat = doos.getSize(new THREE.Vector3());
   const midden = doos.getCenter(new THREE.Vector3());
 
