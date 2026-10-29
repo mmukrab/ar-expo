@@ -9,6 +9,7 @@ import { toonIntro, stopIntro } from "./intro.js";
 const $ = (id) => document.getElementById(id);
 const FOUND_KEY = "ar-expo-found";
 const HIDE_DELAY = 1500; // ms: voorkomt flikkeren als de tracking even wegvalt
+const instelling = new URLSearchParams(location.search);
 
 document.title = config.title;
 $("start-title").textContent = config.title;
@@ -221,10 +222,12 @@ async function start() {
     container: $("ar"),
     imageTargetSrc: config.targets,
     maxTrack: 1,
-    // Sterker afvlakken dan de standaard (0.001 / 1000): een kamer die diep achter de poster ligt
-    // vergroot elk trillen van de herkenning. Het kost een fractie vertraging bij snel bewegen.
-    filterMinCF: 0.0001,
-    filterBeta: 0.001,
+    // Een kamer die diep achter de poster ligt vergroot elk trillen van de herkenning. `cf` bepaalt
+    // hoe sterk het beeld in rust wordt afgevlakt (lager = rustiger), `beta` hoe snel het bij bewegen
+    // weer meegaat (hoger = minder vertraging). MindAR zelf gebruikt 0.001 en 1000.
+    // Uitproberen kan zonder nieuwe versie: index.html?cf=0.0001&beta=10
+    filterMinCF: Number(instelling.get("cf") ?? 0.0001),
+    filterBeta: Number(instelling.get("beta") ?? 10),
     uiLoading: "no",
     uiScanning: "no",
     uiError: "no",
