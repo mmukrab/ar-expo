@@ -191,5 +191,12 @@ export const config = {
         },
       ],
     },
+    {
+      title: "VR-slaapkamer",
+      verhouding: 1.333,
+      works: [
+        { title: "Kamer volgt binnenkort", maker: "Leander Kooij", volgt: true },
+      ],
+    },
   ],
 };

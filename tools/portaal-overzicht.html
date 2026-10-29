@@ -58,7 +58,7 @@
       for (const poster of config.posters) {
         const hoogte = poster.verhouding ?? 1.414;
         for (const work of poster.works) {
-          if (!work.src || !work.portaal) continue;
+          if (!work.src || !work.portaal) continue; // poster zonder kamer
           melding.textContent = `Laden: ${work.maker ?? work.src}…`;
           const rij = tabel.insertRow();
           const naam = rij.insertCell();

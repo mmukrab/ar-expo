@@ -59,7 +59,11 @@ async function loadSlot(slot) {
   const size = work.size ?? 0.8;
   slot.loading = (async () => {
     let object;
-    if (work.src) {
+    if (work.volgt) {
+      // De kamer is er nog niet; de poster toont alleen de naam van de maker.
+      slot.loaded = true;
+      return;
+    } else if (work.src) {
       const gltf = await loader.loadAsync(work.src);
       object = gltf.scene;
       if (gltf.animations.length) {
@@ -217,6 +221,10 @@ async function start() {
     container: $("ar"),
     imageTargetSrc: config.targets,
     maxTrack: 1,
+    // Sterker afvlakken dan de standaard (0.001 / 1000): een kamer die diep achter de poster ligt
+    // vergroot elk trillen van de herkenning. Het kost een fractie vertraging bij snel bewegen.
+    filterMinCF: 0.0001,
+    filterBeta: 0.001,
     uiLoading: "no",
     uiScanning: "no",
     uiError: "no",
